@@ -5,8 +5,8 @@
    tuples must be different.
 """
 if __name__ == "__main__":
-    value = int(input('Input value: '))
-    list_of_tuples = [(2, 3, 4, 1), (5, 6, 8, -4, 7, 33), (98, 6, 32)]
+    value = input('Input value: ')
+    list_of_tuples = [(), (5, 6, 8, -4, 7, 33), (98, 6, 32)]
 
-    list_of_tuples = [item[:-1]+(value,) for item in list_of_tuples]
+    list_of_tuples = [item[:-1]+(value,) for item in list_of_tuples if item]
     print(f'Result: {list_of_tuples}')
