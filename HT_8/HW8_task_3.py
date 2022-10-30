@@ -36,13 +36,16 @@
     P.S. Увага! Файли мають бути саме вказаних форматів (csv, txt, json
         відповідно)
     P.S.S. Добре продумайте структуру програми та функцій
+    Валідні дані:
+    login/pass
+    Kolia/2222
+    Vasia/1155
+    Petia/3344
 """
 import csv
-from datetime import datetime
 import json
+from datetime import datetime
 from colorama import init, Fore
-from colorama import Back
-from colorama import Style
 
 
 def auth(user_login, user_password):
@@ -97,7 +100,6 @@ def withdraw_funds(user, withdraw):
 
 def transaction_history(user):
     with open(user + '_transactions.json', 'r', encoding='utf-8') as file:
-        # First we load existing data into a dict.
         file_data = json.load(file)
         json_data = file_data["transactions"]
         print(Fore.GREEN + 'Ваша історія операцій: ')
@@ -117,13 +119,9 @@ def get_current_date_time():
 
 def write_json(new_data, filename):
     with open(filename, 'r+', encoding='utf-8') as file:
-        # First we load existing data into a dict.
         file_data = json.load(file)
-        # Join new_data with file_data inside emp_details
         file_data["transactions"].append(new_data)
-        # Sets file's current position at offset.
         file.seek(0)
-        # convert back to json.
         json.dump(file_data, file, indent=4, ensure_ascii=False)
 
 
@@ -140,6 +138,7 @@ def start():
     password = input('Введіть пароль: ')
     init(autoreset=True)
     in_action = True
+
     if auth(login, password):
         while in_action:
             action = input(Fore.BLUE+'Введіть дію:\n  '
