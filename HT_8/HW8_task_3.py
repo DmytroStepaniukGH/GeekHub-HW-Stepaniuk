@@ -72,30 +72,33 @@ def view_balance(user):
 
 
 def deposit_funds(user, deposit):
-    with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
-        current_balance = f.readline()
-        new_balance = float(float(current_balance) + float(deposit))
-        f.seek(0)
-        f.truncate(0)
-        f.write(str(new_balance))
+    if deposit > 0:
+        with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
+            current_balance = f.readline()
+            new_balance = int(int(current_balance) + int(deposit))
+            f.seek(0)
+            f.truncate(0)
+            f.write(str(new_balance))
 
-        print(Fore.GREEN + f'Баланс успішно поповнений на {deposit} грн.\n')
+            print(Fore.GREEN + f'Баланс успішно поповнений на {deposit} грн.\n')
+            add_transaction(user, f"Поповнення на суму {deposit} грн")
+    else:
+        print('Поповнення можливе лише на суму, більшу за 0 грн')
 
 
 def withdraw_funds(user, withdraw):
     with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
         current_balance = f.readline()
-        new_balance = float(float(current_balance) - float(withdraw))
+        new_balance = int(int(current_balance) - int(withdraw))
         if new_balance >= 0:
             f.seek(0)
             f.truncate(0)
             f.write(str(new_balance))
             print(Fore.GREEN + f'Успішне зняття {withdraw} грн.\n')
-            return True
+            add_transaction(user, f"Зняття {withdraw} грн")
         else:
             print(Fore.RED + 'На вашому балансі недостатньо коштів для '
                              'здійснення даної операції\n\n')
-            return False
 
 
 def transaction_history(user):
@@ -153,13 +156,11 @@ def start():
                 if int(action) == 1:
                     view_balance(login)
                 elif int(action) == 2:
-                    deposit_value = float(input('Введіть суму для поповнення: '))
+                    deposit_value = int(input('Введіть суму для поповнення: '))
                     deposit_funds(login, deposit_value)
-                    add_transaction(login, f"Поповнення на суму {deposit_value} грн")
                 elif int(action) == 3:
-                    withdraw_value = float(input('Введіть суму для зняття: '))
-                    if withdraw_funds(login, withdraw_value):
-                        add_transaction(login, f"Зняття {withdraw_value} грн")
+                    withdraw_value = int(input('Введіть суму для зняття: '))
+                    withdraw_funds(login, withdraw_value)
                 elif int(action) == 4:
                     transaction_history(login)
                 elif int(action) == 5:
