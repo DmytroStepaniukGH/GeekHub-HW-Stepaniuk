@@ -83,22 +83,25 @@ def deposit_funds(user, deposit):
             print(Fore.GREEN + f'Баланс успішно поповнений на {deposit} грн.\n')
             add_transaction(user, f"Поповнення на суму {deposit} грн")
     else:
-        print('Поповнення можливе лише на суму, більшу за 0 грн')
+        print(Fore.RED + 'Поповнення можливе лише на суму, більшу за 0 грн\n')
 
 
 def withdraw_funds(user, withdraw):
-    with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
-        current_balance = f.readline()
-        new_balance = int(int(current_balance) - int(withdraw))
-        if new_balance >= 0:
-            f.seek(0)
-            f.truncate(0)
-            f.write(str(new_balance))
-            print(Fore.GREEN + f'Успішне зняття {withdraw} грн.\n')
-            add_transaction(user, f"Зняття {withdraw} грн")
-        else:
-            print(Fore.RED + 'На вашому балансі недостатньо коштів для '
-                             'здійснення даної операції\n\n')
+    if withdraw > 0:
+        with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
+            current_balance = f.readline()
+            new_balance = int(int(current_balance) - int(withdraw))
+            if new_balance >= 0:
+                f.seek(0)
+                f.truncate(0)
+                f.write(str(new_balance))
+                print(Fore.GREEN + f'Успішне зняття {withdraw} грн.\n')
+                add_transaction(user, f"Зняття {withdraw} грн")
+            else:
+                print(Fore.RED + 'На вашому балансі недостатньо коштів для '
+                                 'здійснення даної операції\n\n')
+    else:
+        print(Fore.RED + 'Сума зняття має бути більша за нуль\n')
 
 
 def transaction_history(user):
