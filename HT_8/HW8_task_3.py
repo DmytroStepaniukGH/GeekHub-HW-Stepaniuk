@@ -75,7 +75,7 @@ def deposit_funds(user, deposit):
     if deposit > 0:
         with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
             current_balance = f.readline()
-            new_balance = int(int(current_balance) + int(deposit))
+            new_balance = int(current_balance) + int(deposit)
             f.seek(0)
             f.truncate(0)
             f.write(str(new_balance))
@@ -90,7 +90,7 @@ def withdraw_funds(user, withdraw):
     if withdraw > 0:
         with open(user + '_balance.txt', 'r+', encoding='utf-8') as f:
             current_balance = f.readline()
-            new_balance = int(int(current_balance) - int(withdraw))
+            new_balance = int(current_balance) - int(withdraw)
             if new_balance >= 0:
                 f.seek(0)
                 f.truncate(0)
