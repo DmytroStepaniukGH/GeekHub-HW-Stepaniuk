@@ -70,6 +70,76 @@ def view_balance(user):
     print(Fore.GREEN + f'На Вашому балансі: {row[0]} грн.\n')
 
 
+def view_denomination_number(denomination):
+    valid_denomination = [10, 20, 50, 100, 200, 500, 1000]
+    if denomination in valid_denomination:
+        conn = sqlite3.connect("bankomat.db")
+        cur = conn.cursor()
+        cur.execute("SELECT denomination, number FROM Balance "
+                    "WHERE denomination=?", (denomination,))
+        row = cur.fetchone()
+        print(f'Залишок купюр номіналом {denomination} грн становить '
+              f'{row[1]} шт.')
+    else:
+        print(Fore.RED + 'Введене значення не є доступним номіналом '
+                         'купюр\n')
+
+
+def view_balance_atm():
+    conn = sqlite3.connect("bankomat.db")
+    cur = conn.cursor()
+    cur.execute("SELECT denomination, number FROM Balance")
+    row = cur.fetchall()
+    summ = 0
+    for i in row:
+        summ += i[0] * i[1]
+
+    return summ
+
+
+def change_number_bills(denomination, new_number):
+    valid_denomination = [10, 20, 50, 100, 200, 500, 1000]
+    if denomination in valid_denomination and new_number > 0:
+        conn = sqlite3.connect("bankomat.db")
+        cur = conn.cursor()
+        cur.execute("SELECT denomination, number FROM Balance WHERE "
+                    "denomination=?", (denomination,))
+        row = cur.fetchone()
+        current_number = row[1]
+        action = int(input('Виберіть дію: \n'
+                           '1 - Поповнити кількість купюр\n'
+                           '2 - Зняти кількість купюр\n'
+                           'Ваша дія: '))
+        if action == 1:
+            cur.execute("UPDATE Balance SET number=? WHERE denomination=?",
+                        (current_number + new_number, denomination,))
+            conn.commit()
+            print(Fore.GREEN + 'Кількість купюр успішно змінена\n')
+            add_transaction('admin', f'Поповнення купюр номіналом '
+                                     f'{denomination} грн на '
+                                     f'{new_number} шт.')
+        elif action == 2:
+            if current_number - new_number < 0:
+                print(Fore.RED + 'Неможливо зняти більшу кількість купюр, '
+                                 'аніж доступно в банкоматі\n')
+            else:
+                cur.execute("UPDATE Balance SET number=? WHERE "
+                            "denomination=?",
+                            (current_number - new_number, denomination,))
+                conn.commit()
+                print(Fore.GREEN + 'Кількість купюр успішно змінена\n')
+                add_transaction('admin', f'Зняття купюр номіналом '
+                                         f'{denomination} грн на '
+                                         f'{new_number} шт.')
+        else:
+            print(Fore.RED + 'Введена дія не є дією зі списку\n')
+
+        conn.close()
+    else:
+        print(Fore.RED + 'Введене значення не є доступним номіналом '
+                         'купюр\n')
+
+
 def deposit_funds(user, deposit):
     if deposit > 0:
         conn = sqlite3.connect("bankomat.db")
@@ -213,7 +283,35 @@ def start_user(login):
 
 
 def start_collector(login):
-    print("Odmen")
+    in_action = True
+
+    while in_action:
+        action = input(Fore.BLUE + 'Введіть дію:\n  '
+                                   '1. Переглянути баланс банкомату\n  '
+                                   '2. Переглянути кількість купюр\n  '
+                                   '3. Змінити кількість купюр\n  '
+                                   '4. Переглянути транзакції інкасатора\n  '
+                                   '5. Вихід\n  '
+                                   'Ваша дія: ')
+        print('\n')
+        try:
+            if int(action) == 1:
+                print(f'Баланс банкомату: {view_balance_atm()} грн\n')
+            elif int(action) == 2:
+                denomination = int(input('Введіть номінал купюри: '))
+                view_denomination_number(denomination)
+            elif int(action) == 3:
+                denomination_to_change = int(input('Введіть номінал купюри для зміни: '))
+                value_to_change = int(input('Введіть кількість купюр для зміни: '))
+                change_number_bills(denomination_to_change, value_to_change)
+            elif int(action) == 4:
+                transaction_history(login)
+            elif int(action) == 5:
+                in_action = False
+            else:
+                print('Введене значення не є дією із списку')
+        except ValueError:
+            print(ValueError('Введене значення не є цифрою'))
 
 
 def start():
