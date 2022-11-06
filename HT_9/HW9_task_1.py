@@ -39,7 +39,8 @@ from colorama import init, Fore
 def auth(user_login, user_password):
     conn = sqlite3.connect("bankomat.db")
     cur = conn.cursor()
-    cur.execute("SELECT user_id FROM Users WHERE login=? and password=?", (user_login, user_password))
+    cur.execute("SELECT user_id FROM Users WHERE login=? and password=?",
+                (user_login, user_password))
 
     row = cur.fetchone()
     conn.close()
@@ -54,7 +55,8 @@ def auth(user_login, user_password):
 def create_user(login, password):
     conn = sqlite3.connect("bankomat.db")
     cur = conn.cursor()
-    cur.execute("INSERT INTO Users (login, password, balance, is_collector) VALUES (?,?,?,?)",
+    cur.execute("INSERT INTO Users (login, password, balance, is_collector)"
+                " VALUES (?,?,?,?)",
                 (login, password, 0, False))
     conn.commit()
     conn.close()
@@ -85,7 +87,7 @@ def view_denomination_number(denomination):
                          'купюр\n')
 
 
-def view_balance_atm():
+def get_balance_atm():
     conn = sqlite3.connect("bankomat.db")
     cur = conn.cursor()
     cur.execute("SELECT denomination, number FROM Balance")
@@ -148,35 +150,58 @@ def deposit_funds(user, deposit):
         row = cur.fetchone()
 
         current_balance = row[0]
-        new_balance = current_balance + int(deposit)
-        cur.execute("UPDATE Users SET balance=? WHERE login=?", (new_balance, user))
-        conn.commit()
+        if deposit % 10 == 0:
+            new_balance = current_balance + deposit
+            cur.execute("UPDATE Users SET balance=? WHERE login=?",
+                        (new_balance, user))
+            conn.commit()
 
-        conn.close()
-        print(Fore.GREEN + f'Баланс успішно поповнений на {deposit} грн.\n')
-        add_transaction(user, f"Поповнення на суму {deposit} грн")
+            conn.close()
+            print(Fore.GREEN + f'Баланс успішно поповнений на {deposit} '
+                               f'грн.\n')
+            add_transaction(user, f"Поповнення на суму {deposit} грн")
+        else:
+            new_balance = current_balance + deposit - deposit % 10
+            cur.execute("UPDATE Users SET balance=? WHERE login=?",
+                        (new_balance, user))
+            conn.commit()
+
+            conn.close()
+            print(Fore.GREEN + f'Баланс успішно поповнений на {deposit} '
+                               f'грн. Повернено решту {deposit % 10} '
+                               f'грн\n')
+            add_transaction(user, f"Поповнення на суму {deposit} грн та "
+                                  f"повернення решти {deposit % 10} грн")
     else:
-        print(Fore.RED + 'Поповнення можливе лише на суму, більшу за 0 грн\n')
+        print(Fore.RED + 'Поповнення можливе лише на суму, більшу за 0 '
+                         'грн\n')
 
 
 def withdraw_funds(user, withdraw):
     if withdraw > 0:
-        conn = sqlite3.connect("bankomat.db")
-        cur = conn.cursor()
-        cur.execute("SELECT balance FROM Users WHERE login=?", (user,))
-        row = cur.fetchone()
-        current_balance = row[0]
-        new_balance = current_balance - int(withdraw)
-        if new_balance >= 0:
-            cur.execute("UPDATE Users SET balance=? WHERE login=?", (new_balance, user))
-            conn.commit()
-            print(Fore.GREEN + f'Успішне зняття {withdraw} грн.\n')
-            conn.close()
-            add_transaction(user, f"Зняття {withdraw} грн")
+        if get_balance_atm() - withdraw > 0:
+            conn = sqlite3.connect("bankomat.db")
+            cur = conn.cursor()
+            cur.execute("SELECT balance FROM Users WHERE login=?", (user,))
+            row = cur.fetchone()
+            current_balance = row[0]
+            new_balance = current_balance - withdraw
+
+            if new_balance >= 0:
+                cur.execute("UPDATE Users SET balance=? WHERE login=?",
+                            (new_balance, user))
+                conn.commit()
+                print(Fore.GREEN + f'Успішне зняття {withdraw} грн.\n')
+                conn.close()
+                add_transaction(user, f"Зняття {withdraw} грн")
+            else:
+                conn.close()
+                print(Fore.RED + 'На вашому балансі недостатньо коштів для '
+                                 'здійснення даної операції\n\n')
         else:
-            conn.close()
-            print(Fore.RED + 'На вашому балансі недостатньо коштів для '
-                             'здійснення даної операції\n\n')
+            print(Fore.RED + 'Нажаль, сума зняття перевищує баланс '
+                             'банкомату. '
+                             'Будь ласка, спробуйте меншу суму.\n')
     else:
         print(Fore.RED + 'Сума зняття має бути більша за нуль\n')
 
@@ -189,7 +214,8 @@ def get_current_date_time():
 def add_transaction(user, transaction):
     conn = sqlite3.connect("bankomat.db")
     cur = conn.cursor()
-    cur.execute("INSERT INTO Transactions (user, date, transaction_desc) VALUES (?,?,?)",
+    cur.execute("INSERT INTO Transactions (user, date, transaction_desc) "
+                "VALUES (?,?,?)",
                 (user, get_current_date_time(), transaction))
     conn.commit()
     conn.close()
@@ -198,7 +224,8 @@ def add_transaction(user, transaction):
 def transaction_history(user):
     conn = sqlite3.connect("bankomat.db")
     cur = conn.cursor()
-    cur.execute("SELECT date, transaction_desc FROM Transactions WHERE user=?", (user,))
+    cur.execute("SELECT date, transaction_desc FROM Transactions WHERE "
+                "user=?", (user,))
 
     row = cur.fetchall()
     conn.close()
@@ -296,7 +323,7 @@ def start_collector(login):
         print('\n')
         try:
             if int(action) == 1:
-                print(f'Баланс банкомату: {view_balance_atm()} грн\n')
+                print(f'Баланс банкомату: {get_balance_atm()} грн\n')
             elif int(action) == 2:
                 denomination = int(input('Введіть номінал купюри: '))
                 view_denomination_number(denomination)
@@ -340,13 +367,15 @@ def start():
                             'Ваша дія: '))
             try:
                 if int(action) == 1:
-                    print('Реєстрація нового користувача\n'
-                          'Підказка: логін користувача має бути від 4 до '
-                          '20 символів латинського алфівіту. Пароль від 4 '
-                          'до 20 символів латинського алфавіту, а також має'
-                          ' містити хоча б одну цифру\n')
+                    print(Fore.MAGENTA +
+                          'Реєстрація нового користувача\n'
+                          'Підказка: логін користувача має бути від 4 до'
+                          ' 20 латинських символів.\nПароль від 4 до 20 '
+                          'символів, має містити латинські символи та '
+                          'цифри.\n')
                     new_login = input('Придумайте логін: ')
                     new_password = input('Придумайте пароль: ')
+
                     if validate(new_login, new_password) == 'OK':
                         create_user(login, password)
                         print(Fore.GREEN + '\nАвторизація успішна\n')
@@ -366,5 +395,3 @@ def start():
 
 if __name__ == "__main__":
     start()
-    # create_user('test', 'test')
-    # print(is_collector('admin'))
