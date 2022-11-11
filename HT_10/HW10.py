@@ -291,7 +291,7 @@ def withdraw_funds(user, withdraw):
                         print(Fore.RED +
                               'На вашому балансі недостатньо коштів для '
                               'здійснення даної операції\n\n')
-                    elif not denomination_set(withdraw):
+                    elif not combination:
                         print('Нажаль, з наявних купюр сформувати дану '
                               'суму зняття неможливо. Будь ласка, спробуйте '
                               'іншу суму.')
