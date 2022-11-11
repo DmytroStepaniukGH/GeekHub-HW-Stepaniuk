@@ -176,6 +176,21 @@ def deposit_funds(user, deposit):
                          'грн\n')
 
 
+def get_count_denomination(denomination, combination_denom,available_money,
+                           amount_to_pay):
+    if amount_to_pay >= denomination and available_money[denomination] > 0:
+        available_count = available_money[denomination]
+        count = amount_to_pay // denomination
+        count_to_write = count if count <= available_count \
+            else available_count
+
+        combination_denom[denomination] = count_to_write
+        available_money[denomination] = available_count - count_to_write
+        amount_to_pay -= count_to_write * denomination
+
+        return combination_denom, available_money, amount_to_pay
+
+
 def denomination_set(to_pay):
     conn = sqlite3.connect("bankomat.db")
     cur = conn.cursor()
@@ -184,79 +199,26 @@ def denomination_set(to_pay):
     conn.commit()
 
     available_money = {x: y for (x, y) in row}
+    denominations = [item[0] for item in reversed(row)]
+    combination_denom = {item[0]: 0 for item in row}
+    keys = {item[0]: 0 for item in row}
 
-    combination_denom = {10: 0, 20: 0, 50: 0, 100: 0, 200: 0, 500: 0,
-                         1000: 0}
     amount_to_pay = to_pay
     status = True
-    keys = {10: 0, 20: 0, 50: 0, 100: 0, 200: 0, 500: 0, 1000: 0}
 
     while amount_to_pay != 0:
         if sum(available_money.values()) != 0:
-
-            if amount_to_pay >= 1000 and available_money[1000] > 0:
-                available_count = available_money[1000]
-                count = amount_to_pay // 1000
-                count_to_write = count if count <= available_count \
-                    else available_count
-
-                combination_denom[1000] = count_to_write
-                available_money[1000] = available_count - count_to_write
-                amount_to_pay -= count_to_write * 1000
-
-            elif amount_to_pay >= 500 and available_money[500] > 0:
-                available_count = available_money[500]
-                count = amount_to_pay // 500
-                count_to_write = count if count <= available_count \
-                    else available_count
-                combination_denom[500] = count_to_write
-                available_money[500] = available_count - count_to_write
-                amount_to_pay -= count_to_write * 500
-
-            elif amount_to_pay >= 200 and available_money[200] > 0:
-                available_count = available_money[200]
-                count = amount_to_pay // 200
-                count_to_write = count if count <= available_count \
-                    else available_count
-                combination_denom[200] = count_to_write
-                available_money[200] = available_count - count_to_write
-                amount_to_pay -= count_to_write * 200
-
-            elif amount_to_pay >= 100 and available_money[100] > 0:
-                available_count = available_money[100]
-                count = amount_to_pay // 100
-                count_to_write = count if count <= available_count \
-                    else available_count
-                combination_denom[100] = count_to_write
-                available_money[100] = available_count - count_to_write
-                amount_to_pay -= count_to_write * 100
-
-            elif amount_to_pay >= 50 and available_money[50] > 0:
-                available_count = available_money[50]
-                count = amount_to_pay // 50
-                count_to_write = count if count <= available_count \
-                    else available_count
-                combination_denom[50] = count_to_write
-                available_money[50] = available_count - count_to_write
-                amount_to_pay -= count_to_write * 50
-
-            elif amount_to_pay >= 20 and available_money[20] > 0:
-                available_count = available_money[20]
-                count = amount_to_pay // 20
-                count_to_write = count if count <= available_count \
-                    else available_count
-                combination_denom[20] = count_to_write
-                available_money[20] = available_count - count_to_write
-                amount_to_pay -= count_to_write * 20
-
-            elif amount_to_pay >= 10 and available_money[10] > 0:
-                available_count = available_money[10]
-                count = amount_to_pay // 10
-                count_to_write = count if count <= available_count \
-                    else available_count
-                combination_denom[10] = count_to_write
-                available_money[10] -= count_to_write
-                amount_to_pay -= count_to_write * 10
+            for denomination in denominations:
+                items = get_count_denomination(denomination,
+                                               combination_denom,
+                                               available_money,
+                                               amount_to_pay)
+                if items:
+                    combination_denom = items[0]
+                    available_money = items[1]
+                    amount_to_pay = items[2]
+                    if amount_to_pay == 0:
+                        break
 
             else:
                 for key, num in \
@@ -271,8 +233,7 @@ def denomination_set(to_pay):
                     if available_money[key] > 0:
                         available_money[key] -= value
 
-                combination_denom = {10: 0, 20: 0, 50: 0, 100: 0, 200: 0,
-                                     500: 0, 1000: 0}
+                combination_denom = {item[0]: 0 for item in row}
                 amount_to_pay = to_pay
 
         else:
