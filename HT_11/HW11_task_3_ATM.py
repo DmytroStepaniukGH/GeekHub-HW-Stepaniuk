@@ -1,38 +1,14 @@
 """
-Банкомат 3.0
-    - реалізуйте видачу купюр за логікою видавання найменшої кількості
-      купюр, але в межах наявних в банкоматі. Наприклад: 2560 --> 2х1000,
-      1х500, 3х20. Будьте обережні з "жадібним алгоритмом"! Видані купюри
-      також мають бути “вилучені” з банкомату. Тобто якщо до операції в
-      банкоматі було 5х1000, 5х500, 5х20 - має стати 3х1000, 4х500, 2х20.
-    - як і раніше, поповнення балансу користувача не впливає на кількість
-      купюр. Їх кількість може змінювати лише інкасатор.
-    - обов’язкова реалізація таких дій (назви можете використовувати свої):
-    При запускі
-    Вхід
-    Реєстрація (з перевіркою валідності/складності введених даних)
-    Вихід
-    Для користувача
-    Баланс
-    Поповнення
-    Зняття
-    Історія транзакцій
-    Вихід на стартове меню
-    Для інкасатора
-    Наявні купюри/баланс тощо
-    Зміна кількості купюр
-    Повна історія операцій по банкомату (дії всіх користувачів та інкасаторів)
-    Вихід на стартове меню
-    - обов’язкове дотримання РЕР8 (якщо самостійно ніяк,
-      то https://flake8.pycqa.org/en/latest/ вам в допомогу)
-    - (опціонально) не лініться і придумайте якусь свою особливу
-      фішку/додатковий
-      функціонал, але при умові що основне завдання виконане
+3. Банкомат 4.0: переробіть программу з функціонального підходу програмування
+   на використання класів. Додайте шанс 10% отримати бонус на баланс при
+   створенні нового користувача.
 """
 import sqlite3
 import re
+import random
 from datetime import datetime
 from colorama import init, Fore
+
 
 
 class Atm:
@@ -62,8 +38,8 @@ class Atm:
     def create_user(self, new_login, new_password):
         conn = self.create_connection()
         cur = conn.cursor()
-        cur.execute("INSERT INTO Users (login, password, balance, is_collector)"
-                    " VALUES (?,?,?,?)",
+        cur.execute("INSERT INTO Users (login, password, balance, "
+                    "is_collector) VALUES (?,?,?,?)",
                     (new_login, new_password, 0, False))
         conn.commit()
         conn.close()
@@ -71,7 +47,8 @@ class Atm:
     def get_user_balance(self):
         conn = self.create_connection()
         cur = conn.cursor()
-        cur.execute("SELECT balance FROM Users WHERE login=?", (self.login,))
+        cur.execute("SELECT balance FROM Users WHERE login=?",
+                    (self.login,))
 
         row = cur.fetchone()
         conn.close()
@@ -117,7 +94,8 @@ class Atm:
                                '2 - Зняти кількість купюр\n'
                                'Ваша дія: '))
             if action == 1:
-                cur.execute("UPDATE Balance SET number=? WHERE denomination=?",
+                cur.execute("UPDATE Balance SET number=? "
+                            "WHERE denomination=?",
                             (current_number + new_number, denomination,))
                 conn.commit()
                 print(Fore.GREEN + 'Кількість купюр успішно змінена\n')
@@ -126,8 +104,8 @@ class Atm:
                                      f'{new_number} шт.')
             elif action == 2:
                 if current_number - new_number < 0:
-                    print(Fore.RED + 'Неможливо зняти більшу кількість купюр, '
-                                     'аніж доступно в банкоматі\n')
+                    print(Fore.RED + 'Неможливо зняти більшу кількість '
+                                     'купюр, аніж доступно в банкоматі\n')
                 else:
                     cur.execute("UPDATE Balance SET number=? WHERE "
                                 "denomination=?",
@@ -147,9 +125,10 @@ class Atm:
 
     def deposit_funds(self, deposit):
         if deposit > 0:
-            conn = sqlite3.connect("bankomat.db")
+            conn = self.create_connection()
             cur = conn.cursor()
-            cur.execute("SELECT balance FROM Users WHERE login=?", (self.login,))
+            cur.execute("SELECT balance FROM Users WHERE login=?",
+                        (self.login,))
             row = cur.fetchone()
 
             current_balance = row[0]
@@ -179,9 +158,10 @@ class Atm:
             print(Fore.RED + 'Поповнення можливе лише на суму, більшу за 0 '
                              'грн\n')
 
-    def get_count_denomination(self, denomination, combination_denom, available_money,
-                               amount_to_pay):
-        if amount_to_pay >= denomination and available_money[denomination] > 0:
+    def get_count_denomination(self, denomination, combination_denom,
+                               available_money, amount_to_pay):
+        if amount_to_pay >= denomination and \
+                available_money[denomination] > 0:
             available_count = available_money[denomination]
             count = amount_to_pay // denomination
             count_to_write = count if count <= available_count \
@@ -246,7 +226,8 @@ class Atm:
             number_bills = tuple(available_money.keys())
             denominations = tuple(available_money.values())
 
-            cur.executemany("UPDATE Balance SET number=? WHERE denomination=?",
+            cur.executemany("UPDATE Balance SET number=? "
+                            "WHERE denomination=?",
                             list(zip(denominations, number_bills)))
             conn.commit()
             conn.close()
@@ -294,8 +275,8 @@ class Atm:
                                   'здійснення даної операції\n\n')
                         elif not combination:
                             print('Нажаль, з наявних купюр сформувати дану '
-                                  'суму зняття неможливо. Будь ласка, спробуйте '
-                                  'іншу суму.')
+                                  'суму зняття неможливо. Будь ласка, '
+                                  'спробуйте іншу суму.')
                 else:
                     print(Fore.RED + 'Нажаль, сума зняття перевищує баланс '
                                      'банкомату. '
@@ -399,7 +380,8 @@ class Atm:
         except AttributeError:
             return AttributeError('Введені символи не можуть бути використані'
                                   ' в якості логіна/пароля.\n'
-                                  'Для логіна допустимі лише латинські символи.\n'
+                                  'Для логіна допустимі лише латинські '
+                                  'символи.\n'
                                   'Для пароля - латинськы символи та цифри')
         else:
             if not char.search(login):
@@ -415,6 +397,12 @@ class Atm:
 
             return 'OK' if len(errors) == 0 else f'{errors}'
 
+    def bonus_chanse(self):
+        bonus = 0
+        if random.randint(1, 10) == 7:
+            bonus = 200
+        return bonus
+
     def reg_user(self):
         print(Fore.BLUE +
               'Реєстрація нового користувача\n'
@@ -422,16 +410,30 @@ class Atm:
               ' 20 латинських символів.\nПароль від 4 до 20 '
               'символів, має містити латинські символи та '
               'цифри.\n')
-        new_login = input('Придумайте логін: ')
-        new_password = input('Придумайте пароль: ')
+        self.login = input('Придумайте логін: ')
+        self.password = input('Придумайте пароль: ')
 
-        if self.validate(new_login, new_password) == 'OK':
-            self.create_user(new_login, new_password)
-            print(Fore.GREEN + '\nРеєстрація успішна. Авторизовано.\n')
-            new_user = StartUser(new_login, new_password)
+        if self.validate(self.login, self.password) == 'OK':
+            self.create_user(self.login, self.password)
+            bonus = self.bonus_chanse()
+            if bonus:
+                conn = self.create_connection()
+                cur = conn.cursor()
+                cur.execute("UPDATE Users SET balance=? WHERE login=?",
+                            (bonus, self.login))
+                conn.commit()
+                conn.close()
+                self.add_transaction(f'Зарахування бонуса {bonus} грн за '
+                                     f'реєстрацію\n')
+                print(Fore.GREEN + '\nВітаємо! Ви виграли бонус 200 грн. '
+                                   'за реєстрацію.\n'
+                                   'Реєстрація успішна. Авторизовано.\n')
+            else:
+                print(Fore.GREEN + '\nРеєстрація успішна. Авторизовано.\n')
+            new_user = StartUser(self.login, self.password)
             new_user.user_menu()
         else:
-            print(self.validate(new_login, new_password))
+            print(self.validate(self.login, self.password))
 
 
 class StartUser:
@@ -453,9 +455,11 @@ class StartUser:
             try:
                 if int(action) == 1:
                     print(Fore.GREEN + f'На Вашому балансі: '
-                                       f'{self.user.get_user_balance()} грн.\n')
+                                       f'{self.user.get_user_balance()}'
+                                       f' грн.\n')
                 elif int(action) == 2:
-                    deposit_value = int(input('Введіть суму для поповнення: '))
+                    deposit_value = int(input('Введіть суму для '
+                                              'поповнення: '))
                     self.user.deposit_funds(deposit_value)
                 elif int(action) == 3:
                     print(Fore.GREEN + self.user.get_available_denomination())
@@ -474,32 +478,34 @@ class StartUser:
         in_action = True
 
         while in_action:
-            action = input(Fore.BLUE + 'Введіть дію:\n  '
-                                       '1. Переглянути баланс банкомату\n  '
-                                       '2. Переглянути кількість купюр певного'
-                                       ' номіналу\n  '
-                                       '3. Переглянути всі доступні купюри\n  '
-                                       '4. Змінити кількість купюр\n  '
-                                       '5. Переглянути транзакції інкасатора\n  '
+            action = input(Fore.BLUE + 'Введіть дію:\n'
+                                       '1. Переглянути баланс банкомату\n'
+                                       '2. Переглянути кількість купюр '
+                                       'певного номіналу\n'
+                                       '3. Переглянути всі доступні купюри\n'
+                                       '4. Змінити кількість купюр\n'
+                                       '5. Переглянути операції інкасатора\n'
                                        '6. Переглянути всі транзакції '
-                                       'банкомату\n  '
-                                       '7. Вихід\n  '
+                                       'банкомату\n'
+                                       '7. Вихід\n'
                                        'Ваша дія: ')
             print('\n')
             try:
                 if int(action) == 1:
-                    print(f'Баланс банкомату: {self.user.get_balance_atm()} грн\n')
+                    print(f'Баланс банкомату: {self.user.get_balance_atm()}'
+                          f' грн\n')
                 elif int(action) == 2:
                     denomination = int(input('Введіть номінал купюри: '))
                     self.user.view_denomination_number(denomination)
                 elif int(action) == 3:
                     self.user.view_all_denomination()
                 elif int(action) == 4:
-                    denomination_to_change = int(input('Введіть номінал купюри '
-                                                       'для зміни: '))
+                    denomination_to_change = int(input('Введіть номінал '
+                                                       'купюри для зміни: '))
                     value_to_change = int(input('Введіть кількість купюр '
                                                 'для зміни: '))
-                    self.user.change_number_bills(denomination_to_change, value_to_change)
+                    self.user.change_number_bills(denomination_to_change,
+                                                  value_to_change)
                 elif int(action) == 5:
                     self.user.transaction_history()
                 elif int(action) == 6:
@@ -512,7 +518,7 @@ class StartUser:
                 print(ValueError('Введене значення не є цифрою'))
 
 
-def start():
+def main():
     print(Fore.MAGENTA + 'Ласково просимо до банкомату!')
     init(autoreset=True)
     in_main_menu = True
@@ -573,4 +579,4 @@ def start():
 
 
 if __name__ == "__main__":
-    start()
+    main()
