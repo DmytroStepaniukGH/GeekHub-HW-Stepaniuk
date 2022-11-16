@@ -12,37 +12,12 @@ from colorama import init, Fore
 
 
 class Atm:
-    def __init__(self, login=None, password=None):
+    def __init__(self, login=None):
         self.login = login
-        self.password = password
 
     def create_connection(self):
         conn = sqlite3.connect("bankomat.db")
         return conn
-
-    def auth(self):
-        conn = self.create_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT user_id FROM Users WHERE login=? and password=?",
-                    (self.login, self.password))
-
-        row = cur.fetchone()
-        conn.close()
-        logged = False
-
-        if row is not None:
-            logged = True
-
-        return logged
-
-    def create_user(self, new_login, new_password):
-        conn = self.create_connection()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO Users (login, password, balance, "
-                    "is_collector) VALUES (?,?,?,?)",
-                    (new_login, new_password, 0, False))
-        conn.commit()
-        conn.close()
 
     def get_user_balance(self):
         conn = self.create_connection()
@@ -358,6 +333,40 @@ class Atm:
 
         return s[:-2]
 
+
+class StartUser:
+    def __init__(self, login=None, password=None):
+        self.login = login
+        self.password = password
+
+    def create_connection(self):
+        conn = sqlite3.connect("bankomat.db")
+        return conn
+
+    def auth(self):
+        conn = self.create_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id FROM Users WHERE login=? and password=?",
+                    (self.login, self.password))
+
+        row = cur.fetchone()
+        conn.close()
+        logged = False
+
+        if row is not None:
+            logged = True
+
+        return logged
+
+    def create_user(self, new_login, new_password):
+        conn = self.create_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO Users (login, password, balance, "
+                    "is_collector) VALUES (?,?,?,?)",
+                    (new_login, new_password, 0, False))
+        conn.commit()
+        conn.close()
+
     def is_collector(self):
         conn = sqlite3.connect("bankomat.db")
         cur = conn.cursor()
@@ -423,8 +432,6 @@ class Atm:
                             (bonus, self.login))
                 conn.commit()
                 conn.close()
-                self.add_transaction(f'Зарахування бонуса {bonus} грн за '
-                                     f'реєстрацію\n')
                 print(Fore.GREEN + '\nВітаємо! Ви виграли бонус 200 грн. '
                                    'за реєстрацію.\n'
                                    'Реєстрація успішна. Авторизовано.\n')
@@ -435,14 +442,9 @@ class Atm:
         else:
             print(self.validate(self.login, self.password))
 
-
-class StartUser:
-    def __init__(self, login, password):
-        self.user = Atm(login, password)
-
     def user_menu(self):
         in_action = True
-
+        user = Atm(self.login)
         while in_action:
             action = input(Fore.BLUE + 'Введіть дію:\n  '
                                        '1. Переглянути баланс\n  '
@@ -455,18 +457,18 @@ class StartUser:
             try:
                 if int(action) == 1:
                     print(Fore.GREEN + f'На Вашому балансі: '
-                                       f'{self.user.get_user_balance()}'
+                                       f'{user.get_user_balance()}'
                                        f' грн.\n')
                 elif int(action) == 2:
                     deposit_value = int(input('Введіть суму для '
                                               'поповнення: '))
-                    self.user.deposit_funds(deposit_value)
+                    user.deposit_funds(deposit_value)
                 elif int(action) == 3:
-                    print(Fore.GREEN + self.user.get_available_denomination())
+                    print(Fore.GREEN + user.get_available_denomination())
                     withdraw_value = int(input('Введіть суму для зняття: '))
-                    self.user.withdraw_funds(withdraw_value)
+                    user.withdraw_funds(withdraw_value)
                 elif int(action) == 4:
-                    self.user.transaction_history()
+                    user.transaction_history()
                 elif int(action) == 5:
                     in_action = False
                 else:
@@ -476,7 +478,7 @@ class StartUser:
 
     def collector_menu(self):
         in_action = True
-
+        user = Atm(self.login)
         while in_action:
             action = input(Fore.BLUE + 'Введіть дію:\n'
                                        '1. Переглянути баланс банкомату\n'
@@ -492,24 +494,24 @@ class StartUser:
             print('\n')
             try:
                 if int(action) == 1:
-                    print(f'Баланс банкомату: {self.user.get_balance_atm()}'
+                    print(f'Баланс банкомату: {user.get_balance_atm()}'
                           f' грн\n')
                 elif int(action) == 2:
                     denomination = int(input('Введіть номінал купюри: '))
-                    self.user.view_denomination_number(denomination)
+                    user.view_denomination_number(denomination)
                 elif int(action) == 3:
-                    self.user.view_all_denomination()
+                    user.view_all_denomination()
                 elif int(action) == 4:
                     denomination_to_change = int(input('Введіть номінал '
                                                        'купюри для зміни: '))
                     value_to_change = int(input('Введіть кількість купюр '
                                                 'для зміни: '))
-                    self.user.change_number_bills(denomination_to_change,
+                    user.change_number_bills(denomination_to_change,
                                                   value_to_change)
                 elif int(action) == 5:
-                    self.user.transaction_history()
+                    user.transaction_history()
                 elif int(action) == 6:
-                    self.user.all_transactions()
+                    user.all_transactions()
                 elif int(action) == 7:
                     in_action = False
                 else:
@@ -533,19 +535,19 @@ def main():
             if int(action) == 1:
                 login = input('Введіть логін: ')
                 password = input('Введіть пароль: ')
-                new_session = Atm(login, password)
+                user = StartUser(login, password)
                 init(autoreset=True)
                 in_menu = True
 
-                if new_session.auth() and not new_session.is_collector():
+                if user.auth() and not user.is_collector():
                     print(Fore.GREEN + '\nАвторизація успішна\n')
-                    user = StartUser(login, password)
-                    user.user_menu()
+                    new_session = StartUser(login, password)
+                    new_session.user_menu()
 
-                elif new_session.auth() and new_session.is_collector():
+                elif user.auth() and user.is_collector():
                     print(Fore.GREEN + '\nАвторизація успішна\n')
-                    user = StartUser(login, password)
-                    user.collector_menu()
+                    new_session = StartUser(login, password)
+                    new_session.collector_menu()
 
                 else:
                     print(Fore.RED + '\nПомилка авторизації. Введені дані '
@@ -557,7 +559,7 @@ def main():
                                         'Ваша дія: '))
                         try:
                             if int(action) == 1:
-                                new_session.reg_user()
+                                user.reg_user()
                             elif int(action) == 2:
                                 in_menu = False
                             else:
@@ -566,7 +568,7 @@ def main():
                         except ValueError:
                             print(Fore.RED + 'Помилка введеного значення\n')
             elif int(action) == 2:
-                new_session = Atm()
+                new_session = StartUser()
                 new_session.reg_user()
             elif int(action) == 3:
                 print(Fore.GREEN + '\nДо зустрічі!')

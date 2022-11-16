@@ -30,60 +30,55 @@ class Calc():
         за замовчуванням дорівнює None
     ---------
     Methods:
-    add(self)
+    add(first_number, second_number)
         обчислює результат додавання двох чисел та змінює значення
         атрибута класу на поточний результат
 
-    subtraction(self)
+    subtraction(first_number, second_number)
         обчислює результат віднімання двох чисел та змінює значення
         атрибута класу на поточний результат
 
-    multiplication(self)
+    multiplication(first_number, second_number)
         обчислює результат множення двох чисел та змінює значення
         атрибута класу на поточний результат
 
-    division(self)
+    division(first_number, second_number)
         обчислює результат ділення двох чисел та змінює значення
         атрибута класу на поточний результат
-
     """
     last_result = None
 
-    def __init__(self, first_number, second_number):
-        self.first_number = first_number
-        self.second_number = second_number
-
-    def add(self):
-        current_res = self.first_number + self.second_number
+    def add(self, first_number, second_number):
+        current_res = first_number + second_number
         self.last_result = Calc.last_result
         Calc.last_result = current_res
 
-    def subtraction(self):
-        current_res = self.first_number - self.second_number
+    def subtraction(self, first_number, second_number):
+        current_res = first_number - second_number
         self.last_result = Calc.last_result
         Calc.last_result = current_res
 
-    def multiplication(self):
-        current_res = self.first_number * self.second_number
+    def multiplication(self, first_number, second_number):
+        current_res = first_number * second_number
         self.last_result = Calc.last_result
         Calc.last_result = current_res
 
-    def division(self):
-        current_res = self.first_number / self.second_number \
-            if self.second_number != 0 else Exception('Division by zero')
+    def division(self, first_number, second_number):
+        current_res = first_number / second_number \
+            if second_number != 0 else Exception('Division by zero')
         self.last_result = Calc.last_result
         Calc.last_result = current_res
 
 
 if __name__ == "__main__":
     print(Calc.__doc__)
-    res = Calc(2, 5)
+    res = Calc()
     print(f'Last result ( -> None): {res.last_result}')
-    res.add()
-    print(f'Last result (2 + 5 -> None): {res.last_result}')
-    res.subtraction()
-    print(f'Last result (2 - 5 -> 7): {res.last_result}')
-    res.division()
+    res.add(1, 1)
+    print(f'Last result (1 + 1 -> None): {res.last_result}')
+    res.subtraction(2, 5)
+    print(f'Last result (2 - 5 -> 2): {res.last_result}')
+    res.division(2, 5)
     print(f'Last result (2 / 5 -> -3): {res.last_result}')
-    res.multiplication()
+    res.multiplication(2, 5)
     print(f'Last result (2 * 5 -> 0.4): {res.last_result}')
