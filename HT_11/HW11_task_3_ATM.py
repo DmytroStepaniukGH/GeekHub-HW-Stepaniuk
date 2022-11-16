@@ -541,13 +541,11 @@ def main():
 
                 if user.auth() and not user.is_collector():
                     print(Fore.GREEN + '\nАвторизація успішна\n')
-                    new_session = StartUser(login, password)
-                    new_session.user_menu()
+                    user.user_menu()
 
                 elif user.auth() and user.is_collector():
                     print(Fore.GREEN + '\nАвторизація успішна\n')
-                    new_session = StartUser(login, password)
-                    new_session.collector_menu()
+                    user.collector_menu()
 
                 else:
                     print(Fore.RED + '\nПомилка авторизації. Введені дані '
