@@ -16,7 +16,7 @@
 
 
 class Transaction:
-    def __init__(self, amount, date, currency, usd_conversion_rate,
+    def __init__(self, amount, date, currency='USD', usd_conversion_rate=1.0,
                  description=None):
         self._amount = amount
         self._date = date
