@@ -41,25 +41,26 @@ class CurrencyHistory:
         for i, j in data["rates"].items():
             rates.append([i, j['UAH']])
 
-        print(f'{self.currency} -> UAH')
-        print(f'Дата\t\t\tКурс')
-        for day in rates:
-            print(f'{day[0]}\t\t{day[1]}')
-
-        print('\n')
+        if rates:
+            print(f'{self.currency} -> UAH')
+            print(f'Дата\t\t\tКурс')
+            for day in rates:
+                print(f'{day[0]}\t\t{day[1]}')
+            print('\n')
+        else:
+            print('Не вдалось отримати інформацію для заданого інтервалу\n')
 
 
 class Validate:
     @staticmethod
     def validate_format_currency(currency):
         cur_pattern = "^[A-Z]{3}$"
-        return True if re.match(cur_pattern, currency) else False
+        return re.match(cur_pattern, currency)
 
     @staticmethod
     def validate_date_format(date):
         date_pattern = "^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$"
-
-        return True if re.match(date_pattern, date) else False
+        return re.match(date_pattern, date)
 
     @staticmethod
     def validate_current_date(date):
@@ -86,6 +87,54 @@ class Validate:
         return key in keys
 
 
+class DataProcessing:
+    def __init__(self, currency, start_date, end_date=None):
+        self.currency = currency
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def __check_currency(self):
+        status = False
+        if not Validate.validate_format_currency(self.currency):
+            print('Введена валюта не відповідає формату CCC\n')
+        elif not Validate.is_available_key_of_currency(self.currency):
+            print('Введений код валюти не підтримується\n')
+        else:
+            status = True
+        return status
+
+    def check_data_for_first_condition(self):
+        if self.__check_currency():
+            if not Validate.validate_date_format(self.start_date):
+                print('Введена дата не відповідає формату РРРР-ММ-ДД\n')
+
+            elif not Validate.validate_current_date(self.start_date):
+                print('Введена дата не повинна перевищувати сьогоднішню дату\n')
+
+            else:
+                curr_hist = CurrencyHistory(self.currency, self.start_date)
+                curr_hist.show_history()
+
+    def check_data_for_second_condition(self):
+        if self.__check_currency():
+            if not Validate.validate_date_format(self.start_date):
+                print('Дата не відповідає формату РРРР-ММ-ДД\n')
+
+            elif not Validate.validate_current_date(self.start_date):
+                print('Дата не повинна перевищувати сьогоднішню дату\n')
+
+            elif not Validate.validate_date_format(self.end_date):
+                print('Дата не відповідає формату РРРР-ММ-ДД\n')
+
+            elif not Validate.validate_current_date(self.end_date):
+                print('Дата не повинна перевищувати сьогоднішню дату\n')
+
+            else:
+                curr_hist = CurrencyHistory(self.currency, self.start_date,
+                                            self.end_date)
+                curr_hist.show_history()
+
+
 def main():
     print('Вітаємо в архіві валют!')
     in_menu = True
@@ -99,73 +148,28 @@ def main():
             if int(action) == 1:
                 currency = input('Введіть код необхідної валюти '
                                  '(USD, EUR, CZK і т.д.): ')
-                if Validate.validate_format_currency(currency):
-                    if Validate.is_available_key_of_currency(currency):
-                        date = input('Введіть дату в форматі РРРР-ММ-ДД '
-                                     '(наприклад, 2022-11-27): ')
-                        if Validate.validate_date_format(date):
-                            if Validate.validate_current_date(date):
-                                curr_hist = CurrencyHistory(currency, date)
-                                try:
-                                    curr_hist.show_history()
-                                except KeyError:
-                                    print('Нажаль, на введену дату інформація по '
-                                          'курсу відносно гривні недоступна\n')
-                            else:
-                                print('Введена дата не повинна перевищувати '
-                                      'сьогоднішню дату\n')
-                        else:
-                            print('Введена дата не відповідає формату '
-                                  'РРРР-ММ-ДД\n')
-                    else:
-                        print('Введений код валюти не підтримується\n')
-                else:
-                    print('Введена валюта не відповідає формату CCC\n')
+                start_date = input('Введіть початкову дату в форматі '
+                                   'РРРР-ММ-ДД (наприклад, 2022-11-20): ')
+                new_check = DataProcessing(currency, start_date)
+                new_check.check_data_for_first_condition()
+
             elif int(action) == 2:
                 currency = input('Введіть код необхідної валюти '
                                  '(USD, EUR, CZK і т.д.): ')
-                if Validate.validate_format_currency(currency):
-                    if Validate.is_available_key_of_currency(currency):
-                        start_date = input('Введіть початкову дату в форматі '
-                                           'РРРР-ММ-ДД (наприклад, 2022-11-20): ')
-                        if Validate.validate_date_format(start_date):
-                            if Validate.validate_current_date(start_date):
-                                end_date = input('Введіть кінцеву дату в форматі'
-                                                 ' РРРР-ММ-ДД (наприклад, '
-                                                 '2022-11-20): ')
-                                if Validate.validate_date_format(end_date):
-                                    if Validate.validate_current_date(end_date):
-                                        curr_hist = CurrencyHistory(currency,
-                                                                    start_date,
-                                                                    end_date)
-                                        try:
-                                            curr_hist.show_history()
-                                        except KeyError:
-                                            print('Нажаль, за даний проміжок '
-                                                  'інформація по курсу відносно '
-                                                  'гривні недоступна\n')
-                                    else:
-                                        print('Введена дата не повинна '
-                                              'перевищувати сьогоднішню дату\n')
-                                else:
-                                    print('Введена дата не відповідає '
-                                          'формату РРРР-ММ-ДД\n')
-                            else:
-                                print('Введена дата не повинна перевищувати '
-                                      'сьогоднішню дату\n')
-                        else:
-                            print('Введена дата не відповідає формату '
-                                  'РРРР-ММ-ДД\n')
-                    else:
-                        print('Введений код валюти не підтримується\n')
-                else:
-                    print('Введена валюта не відповідає формату CCC\n')
+                start_date = input('Введіть початкову дату в форматі '
+                                   'РРРР-ММ-ДД (наприклад, 2022-11-20): ')
+                end_date = input('Введіть кінцеву дату в форматі '
+                                 'РРРР-ММ-ДД (наприклад, 2022-11-20): ')
+
+                new_check = DataProcessing(currency, start_date, end_date)
+                new_check.check_data_for_second_condition()
+
             elif int(action) == 3:
                 in_menu = False
             else:
                 print('Введене значення не є дією із списку')
         except ValueError:
-            print(ValueError('Введене значення не є цифрою'))
+            print(ValueError('Помилка введеного значення\n'))
     print('До зустрічі!')
 
 
