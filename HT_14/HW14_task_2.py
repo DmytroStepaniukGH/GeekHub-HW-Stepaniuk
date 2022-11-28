@@ -76,6 +76,15 @@ class Validate:
 
         return date_now >= input_date
 
+    @staticmethod
+    def is_available_key_of_currency(key):
+        url = 'https://api.exchangerate.host/symbols'
+        response = requests.get(url)
+        data = response.json()
+        keys = data['symbols'].keys()
+
+        return key in keys
+
 
 def main():
     print('Вітаємо в архіві валют!')
@@ -91,58 +100,64 @@ def main():
                 currency = input('Введіть код необхідної валюти '
                                  '(USD, EUR, CZK і т.д.): ')
                 if Validate.validate_format_currency(currency):
-                    date = input('Введіть дату в форматі РРРР-ММ-ДД '
-                                 '(наприклад, 2022-11-27): ')
-                    if Validate.validate_date_format(date):
-                        if Validate.validate_current_date(date):
-                            curr_hist = CurrencyHistory(currency, date)
-                            try:
-                                curr_hist.show_history()
-                            except KeyError:
-                                print('Нажаль, на введену дату інформація по '
-                                      'курсу відносно гривні недоступна\n')
+                    if Validate.is_available_key_of_currency(currency):
+                        date = input('Введіть дату в форматі РРРР-ММ-ДД '
+                                     '(наприклад, 2022-11-27): ')
+                        if Validate.validate_date_format(date):
+                            if Validate.validate_current_date(date):
+                                curr_hist = CurrencyHistory(currency, date)
+                                try:
+                                    curr_hist.show_history()
+                                except KeyError:
+                                    print('Нажаль, на введену дату інформація по '
+                                          'курсу відносно гривні недоступна\n')
+                            else:
+                                print('Введена дата не повинна перевищувати '
+                                      'сьогоднішню дату\n')
                         else:
-                            print('Введена дата не повинна перевищувати '
-                                  'сьогоднішню дату\n')
+                            print('Введена дата не відповідає формату '
+                                  'РРРР-ММ-ДД\n')
                     else:
-                        print('Введена дата не відповідає формату '
-                              'РРРР-ММ-ДД\n')
+                        print('Введений код валюти не підтримується\n')
                 else:
                     print('Введена валюта не відповідає формату CCC\n')
             elif int(action) == 2:
                 currency = input('Введіть код необхідної валюти '
                                  '(USD, EUR, CZK і т.д.): ')
                 if Validate.validate_format_currency(currency):
-                    start_date = input('Введіть початкову дату в форматі '
-                                       'РРРР-ММ-ДД (наприклад, 2022-11-20): ')
-                    if Validate.validate_date_format(start_date):
-                        if Validate.validate_current_date(start_date):
-                            end_date = input('Введіть кінцеву дату в форматі'
-                                             ' РРРР-ММ-ДД (наприклад, '
-                                             '2022-11-20): ')
-                            if Validate.validate_date_format(end_date):
-                                if Validate.validate_current_date(end_date):
-                                    curr_hist = CurrencyHistory(currency,
-                                                                start_date,
-                                                                end_date)
-                                    try:
-                                        curr_hist.show_history()
-                                    except KeyError:
-                                        print('Нажаль, за даний проміжок '
-                                              'інформація по курсу відносно '
-                                              'гривні недоступна\n')
+                    if Validate.is_available_key_of_currency(currency):
+                        start_date = input('Введіть початкову дату в форматі '
+                                           'РРРР-ММ-ДД (наприклад, 2022-11-20): ')
+                        if Validate.validate_date_format(start_date):
+                            if Validate.validate_current_date(start_date):
+                                end_date = input('Введіть кінцеву дату в форматі'
+                                                 ' РРРР-ММ-ДД (наприклад, '
+                                                 '2022-11-20): ')
+                                if Validate.validate_date_format(end_date):
+                                    if Validate.validate_current_date(end_date):
+                                        curr_hist = CurrencyHistory(currency,
+                                                                    start_date,
+                                                                    end_date)
+                                        try:
+                                            curr_hist.show_history()
+                                        except KeyError:
+                                            print('Нажаль, за даний проміжок '
+                                                  'інформація по курсу відносно '
+                                                  'гривні недоступна\n')
+                                    else:
+                                        print('Введена дата не повинна '
+                                              'перевищувати сьогоднішню дату\n')
                                 else:
-                                    print('Введена дата не повинна '
-                                          'перевищувати сьогоднішню дату\n')
+                                    print('Введена дата не відповідає '
+                                          'формату РРРР-ММ-ДД\n')
                             else:
-                                print('Введена дата не відповідає '
-                                      'формату РРРР-ММ-ДД\n')
+                                print('Введена дата не повинна перевищувати '
+                                      'сьогоднішню дату\n')
                         else:
-                            print('Введена дата не повинна перевищувати '
-                                  'сьогоднішню дату\n')
+                            print('Введена дата не відповідає формату '
+                                  'РРРР-ММ-ДД\n')
                     else:
-                        print('Введена дата не відповідає формату '
-                              'РРРР-ММ-ДД\n')
+                        print('Введений код валюти не підтримується\n')
                 else:
                     print('Введена валюта не відповідає формату CCC\n')
             elif int(action) == 3:
