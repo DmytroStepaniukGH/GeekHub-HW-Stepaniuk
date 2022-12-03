@@ -7,10 +7,10 @@
     CSV файл.
 """
 import csv
-from dataclasses import dataclass, fields
 import requests
 import time
 import random
+from dataclasses import dataclass, fields
 from bs4 import BeautifulSoup
 
 
@@ -40,24 +40,27 @@ class DomainsParser:
     DOMAIN_FIELDS = [field.name for field in fields(Product)]
     DOMAIN_OUTPUT_CSV_PATH = 'domains.csv'
     session = requests.Session()
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:94.0)'
-                             ' Gecko/20100101 Firefox/94.0'}
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; '
+                             'rv:94.0) Gecko/20100101 Firefox/94.0'}
 
     def get_domains(self):
         data = []
         for domains_per_number in range(0, 325, 25):
             print(f'Get data from page {int(domains_per_number / 25)}')
-            page = self.session.get(self.URL + f'{domains_per_number}#listing',
+            page = self.session.get(self.URL + f'{domains_per_number}'
+                                               f'#listing',
                                     headers=self.headers).content
             soup = BeautifulSoup(page, 'lxml')
+
             table = soup.find('table', {"class": "base1"})
             table_body = table.find('tbody')
-
             rows = table_body.find_all('tr')
+
             for row in rows:
                 cols = row.find_all('td')
                 cols = [item.text for item in cols]
                 data.append([item for item in cols])
+
             time_sleep = random.randint(10, 20)
             print(f'Sleep {time_sleep} sec')
             time.sleep(time_sleep)
