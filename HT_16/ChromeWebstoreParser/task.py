@@ -16,7 +16,7 @@ if __name__ == '__main__':
     c = CrawlerProcess({
         'USER_AGENT': 'Mozilla/5.0',
         'FEED_FORMAT': 'csv',
-        'FEED_URI': 'ChromeWebstore.csv',
+        'FEED_URI': 'ChromeWebstoreFixId.csv',
     })
     c.crawl(webstore_spider.WebstoreSpider)
     c.start()

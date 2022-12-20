@@ -6,8 +6,9 @@ class WebstoreSpider(SitemapSpider):
     sitemap_urls = ["https://chrome.google.com/webstore/sitemap"]
 
     def parse(self, response):
+        id = response.url.split('/')[-1]
         yield {
-            'id': response.url.split('/')[-1],
+            'id': id if 'hl=' not in id else id.split('?')[0],
             'name': response.css("h1.e-f-w::text").get(),
             'description': response.css(".C-b-p-j-Pb::text").get()
         }
