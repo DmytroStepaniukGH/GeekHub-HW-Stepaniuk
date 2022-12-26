@@ -117,7 +117,7 @@ class OrderRobot:
         pdf.write_html(data)
         tmp_name = name + '_robot.png'
         pdf.image('output/' + tmp_name, 40, 60)
-        pdf.output('output/' + name + '.pdf', 'F')
+        pdf.output('output/' + name + '_robot.pdf', 'F')
         os.remove(os.path.join('output', name + '_robot.png'))
 
     def go_to_order_another(self):
