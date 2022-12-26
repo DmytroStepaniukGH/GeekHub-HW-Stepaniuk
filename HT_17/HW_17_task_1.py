@@ -9,15 +9,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from bs4 import BeautifulSoup
+from fpdf import FPDF, HTMLMixin
 
 
 class OrderRobot:
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--hide-scrollbars')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-web-security')
     options.add_argument('--allow-running-insecure-content')
-    options.add_argument('--hide-scrollbars')
     options.add_argument('--ignore-ssl-errors=true')
     options.add_argument('--start-maximized')
 
@@ -27,8 +29,10 @@ class OrderRobot:
     service = ChromeService(executable_path=ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
 
+    path_output = 'output'
+
     def get_orders(self):
-        self._check_folder()
+        self._check_folder(self.path_output)
         self.open_site()
         self.go_to_order()
         order_values = self._get_values_from_csv()
@@ -36,9 +40,14 @@ class OrderRobot:
         for order in order_values:
             self.click_to_start_order()
             self.set_values_to_fields(order)
-            self.get_preview()
+            self.move_to_preview()
             self.get_order()
+            self.get_preview()
+            self.get_html_of_preview()
+            self.generate_pdf()
             self.go_to_order_another()
+
+        os.remove(os.path.join('tmp_page.html'))
 
     def open_site(self):
         self.driver.get('https://robotsparebinindustries.com/')
@@ -67,24 +76,16 @@ class OrderRobot:
         fields[0].send_keys(order_values['Legs'])
         fields[1].send_keys(order_values['Address'])
 
-    def get_preview(self):
+    def move_to_preview(self):
         self.driver.find_element(By.ID, 'preview').click()
-        self.wait_element('CSS', 'a.attribution')
-        time.sleep(1)
-        preview = self.driver.find_element(By.ID, 'robot-preview-image')
-        preview.screenshot('output/tmp_name.png')
 
     def get_order(self):
         retries = 5
-        while retries:
+        while retries > 0:
             try:
                 self.wait_element('ID', 'order').click()
-                text = self.driver.find_element(By.CSS_SELECTOR,
-                                                '.badge.badge-success').text
-                print(text)
-                old_name = 'output/tmp_name.png'
-                new_name = 'output/' + text + '_robot.png'
-                os.rename(old_name, new_name)
+                is_find = self.driver.find_element(
+                    By.CSS_SELECTOR, '.badge.badge-success').text
                 break
             except Exception:
                 time.sleep(1)
@@ -92,6 +93,32 @@ class OrderRobot:
                     retries -= 1
                 else:
                     raise
+
+    def get_preview(self):
+        time.sleep(1)
+        text = self.driver.find_element(By.CSS_SELECTOR,
+                                        '.badge.badge-success').text
+        name = 'output/' + text + '_robot.png'
+        preview = self.driver.find_element(By.ID, 'robot-preview-image')
+        preview.screenshot(name)
+
+    def get_html_of_preview(self):
+        soup = BeautifulSoup(self.driver.page_source, 'lxml')
+        with open('tmp_page.html', 'w', encoding='utf-8') as order_html:
+            order_html.write(str(soup.find("div", {"id": "receipt"})))
+
+    def generate_pdf(self):
+        pdf = MyFPDF()
+        pdf.add_page()
+        file = open("tmp_page.html", "r")
+        name = self.driver.find_element(By.CSS_SELECTOR,
+                                        '.badge.badge-success').text
+        data = file.read()
+        pdf.write_html(data)
+        tmp_name = name + '_robot.png'
+        pdf.image('output/' + tmp_name, 40, 60)
+        pdf.output('output/' + name + '.pdf', 'F')
+        os.remove(os.path.join('output', name + '_robot.png'))
 
     def go_to_order_another(self):
         self.wait_element('ID', 'order-another').click()
@@ -117,19 +144,21 @@ class OrderRobot:
         return data
 
     @staticmethod
-    def _check_folder():
-        path = 'output'
-        is_exist = os.path.exists(path)
+    def _check_folder(folder):
+        is_exist = os.path.exists(folder)
         if not is_exist:
-            os.makedirs(path)
+            os.makedirs(folder)
         else:
-            dir = 'output'
-            files = os.listdir(dir)
+            files = os.listdir(folder)
             if len(files) > 0:
                 for file in files:
-                    os.remove(os.path.join(dir, file))
+                    os.remove(os.path.join(folder, file))
             else:
                 return
+
+
+class MyFPDF(FPDF, HTMLMixin):
+    pass
 
 
 if __name__ == '__main__':

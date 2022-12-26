@@ -1,0 +1,7 @@
+selenium==4.7.2
+webdriver-manager==3.8.5
+beautifulsoup4==4.11.1
+lxml==4.9.1
+wget==3.2
+fpdf2==2.6.0
+
