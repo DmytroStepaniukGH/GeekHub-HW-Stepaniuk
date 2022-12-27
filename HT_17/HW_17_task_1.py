@@ -1,16 +1,16 @@
 import time
-import wget
 import os
 import csv
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service as ChromeService
+import wget
+from fpdf import FPDF, HTMLMixin
+from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
-from fpdf import FPDF, HTMLMixin
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 class OrderRobot:
@@ -72,9 +72,13 @@ class OrderRobot:
                 btn.click()
                 break
 
-        fields = self.driver.find_elements(By.CSS_SELECTOR, '.form-control')
-        fields[0].send_keys(order_values['Legs'])
-        fields[1].send_keys(order_values['Address'])
+        self.driver.find_element(By.XPATH,
+                                 "//input[@placeholder="
+                                 "'Enter the part number for the legs']"). \
+            send_keys(order_values['Legs'])
+        self.driver.find_element(By.XPATH, "//input[@placeholder="
+                                           "'Shipping address']").send_keys(
+            order_values['Address'])
 
     def move_to_preview(self):
         self.driver.find_element(By.ID, 'preview').click()
@@ -84,8 +88,8 @@ class OrderRobot:
         while retries > 0:
             try:
                 self.wait_element('ID', 'order').click()
-                is_find = self.driver.find_element(
-                    By.CSS_SELECTOR, '.badge.badge-success').text
+                self.driver.find_element(By.CSS_SELECTOR,
+                                         '.badge.badge-success')
                 break
             except Exception:
                 time.sleep(1)
@@ -95,30 +99,32 @@ class OrderRobot:
                     raise
 
     def get_preview(self):
-        time.sleep(1)
         text = self.driver.find_element(By.CSS_SELECTOR,
                                         '.badge.badge-success').text
-        name = 'output/' + text + '_robot.png'
-        preview = self.driver.find_element(By.ID, 'robot-preview-image')
+        name = f'output/{text}_robot.png'
+
+        self.wait_element('XPATH', "//img[@alt='Legs']")
+        preview = self.driver.find_element(By.ID,
+                                           'robot-preview-image')
         preview.screenshot(name)
 
     def get_html_of_preview(self):
         soup = BeautifulSoup(self.driver.page_source, 'lxml')
         with open('tmp_page.html', 'w', encoding='utf-8') as order_html:
-            order_html.write(str(soup.find("div", {"id": "receipt"})))
+            order_html.write(str(soup.find('div', {'id': 'receipt'})))
 
     def generate_pdf(self):
         pdf = MyFPDF()
         pdf.add_page()
-        file = open("tmp_page.html", "r")
+        file = open('tmp_page.html', 'r')
         name = self.driver.find_element(By.CSS_SELECTOR,
                                         '.badge.badge-success').text
         data = file.read()
         pdf.write_html(data)
-        tmp_name = name + '_robot.png'
-        pdf.image('output/' + tmp_name, 40, 60)
-        pdf.output('output/' + name + '_robot.pdf', 'F')
-        os.remove(os.path.join('output', name + '_robot.png'))
+        tmp_name = f'{name}_robot.png'
+        pdf.image(f'output/{tmp_name}', 40, 60)
+        pdf.output(f'output/{name}_robot.pdf', 'F')
+        os.remove(os.path.join('output', f'{name}_robot.png'))
 
     def go_to_order_another(self):
         self.wait_element('ID', 'order-another').click()
@@ -130,6 +136,9 @@ class OrderRobot:
         elif type_find == 'CSS':
             return wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,
                                                           element)))
+        elif type_find == "XPATH":
+            return wait.until(EC.visibility_of_element_located((
+                By.XPATH, element)))
         else:
             raise Exception('Заданий тип не знайдено')
 
